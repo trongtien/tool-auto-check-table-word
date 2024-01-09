@@ -66,8 +66,7 @@ enum_answer = {
     22: dict(selected_answer=4, max=4, cell=2)
 }
 
-path = 'C:/Users/base/Documents/word/BT-N4.docx'
-doc = docx.Document(path)
+
 
 def automationRandomSelectedAnswer(num_max, selected_answer):
     # 1-> num_max
@@ -100,6 +99,9 @@ def automationTick(index: str, path_doc_save_file: str):
     print('==============================>')
     print("start mapping cell")
 
+    path = 'C:/Users/base/Documents/word/BT-N4.docx'
+    doc = docx.Document(path)
+
     file_name_suffix = "BT-N4-"+index+".docx"
     value_default_cell='x'
 
@@ -113,9 +115,6 @@ def automationTick(index: str, path_doc_save_file: str):
     table = doc.tables[0]
 
     for numCell in list(range(1, 23)):
-        
-        is_exist_question = numCell in question
-
         selected_answer = enum_answer.get(numCell)['selected_answer']
         num_cell_set_value = enum_answer.get(numCell)['cell']
 
@@ -138,23 +137,27 @@ def automationTick(index: str, path_doc_save_file: str):
         '''
             Add value table cell
         '''
-        print(numCell,'is_exist_question', is_exist_question, 'num_cell_set_value', num_cell_set_value, 'selected_answer', selected_answer)
-        if is_exist_question :
-            table.cell(num_cell_set_value, selected_answer).text = value_default_cell
+        if numCell in question:
             print('(', num_cell_set_value,',',selected_answer, ')')
+            table.cell(num_cell_set_value, selected_answer).text = value_default_cell
         else:
-            table.cell(num_cell_set_value, selected_answer_random).text = value_default_cell
             print('(', num_cell_set_value,',',selected_answer_random, ')')
-       
+            table.cell(num_cell_set_value, selected_answer_random).text = value_default_cell
+
+     
 
     doc.save(path_doc_save_file + file_name_suffix)
+
+    question = []
     print('+++++++++++++++++++++++++++++')
     print("Save file success")
     print('==============================>')
     
 
+
+
 def main():
-    num_word_generator = 1
+    num_word_generator = 800
     path_save_file = 'C:/Users/base/Documents/word/convert/'
     for index in range(num_word_generator):
         automationTick(str(index+1), path_save_file)
