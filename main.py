@@ -1,7 +1,8 @@
+import re
 import docx
-from numpy import random
-
-
+from numpy import random, array as numpy_array
+import pandas as pd
+from docxtpl import DocxTemplate
 
 '''
     index   0
@@ -67,7 +68,6 @@ enum_answer = {
 }
 
 
-
 def automationRandomSelectedAnswer(num_max, selected_answer):
     # 1-> num_max
     num_list_random = list(range(1, num_max + 1))
@@ -95,22 +95,49 @@ def random_question_correl_answer(num_cell_root):
 
     return question 
 
-def automationTick(index: str, path_doc_save_file: str):
+def no_accent_vietnamese(s: str) -> str:
+    s = re.sub('[áàảãạăắằẳẵặâấầẩẫậ]', 'a', s)
+    s = re.sub('[ÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬ]', 'A', s)
+    s = re.sub('[éèẻẽẹêếềểễệ]', 'e', s)
+    s = re.sub('[ÉÈẺẼẸÊẾỀỂỄỆ]', 'E', s)
+    s = re.sub('[óòỏõọôốồổỗộơớờởỡợ]', 'o', s)
+    s = re.sub('[ÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢ]', 'O', s)
+    s = re.sub('[íìỉĩị]', 'i', s)
+    s = re.sub('[ÍÌỈĨỊ]', 'I', s)
+    s = re.sub('[úùủũụưứừửữự]', 'u', s)
+    s = re.sub('[ÚÙỦŨỤƯỨỪỬỮỰ]', 'U', s)
+    s = re.sub('[ýỳỷỹỵ]', 'y', s)
+    s = re.sub('[ÝỲỶỸỴ]', 'Y', s)
+    s = re.sub('đ', 'd', s)
+    s = re.sub('Đ', 'D', s)
+    return s
+
+def gen_code(text: str) -> str:
+        text = no_accent_vietnamese(text)
+
+        while " " in text:
+            text = text.replace(" ", "_")
+
+        return text
+
+def automationTick(index: str, path_doc_save_file: str, employee_import):
     print('==============================>')
-    print("start mapping cell")
-
-    path = 'C:/Users/base/Documents/word/BT-N4.docx'
+    print('+++++++++++++++++++++++++++++')
+    
+    path = 'C:/Users/base/Documents/word/N4_template.docx'
     doc = docx.Document(path)
-
-    file_name_suffix = "BT-N4-"+index+".docx"
+    name_path = gen_code(employee_import)
+    print('[Name convert path]', name_path)
+    file_name_suffix = name_path+"_BT-N4-"+index+".docx"
     value_default_cell='x'
 
     # Max row table tick
     question = random_question_correl_answer(list(range(1, 23)))
-    print('+++++++++++++++++++++++++++++')
     print('Question tick', len(question))
-    print('+++++++++++++++++++++++++++++')
 
+    # paragraphs = doc.paragraphs
+
+  
     # Get table row
     table = doc.tables[0]
 
@@ -144,8 +171,7 @@ def automationTick(index: str, path_doc_save_file: str):
             print('(', num_cell_set_value,',',selected_answer_random, ')')
             table.cell(num_cell_set_value, selected_answer_random).text = value_default_cell
 
-     
-
+    
     doc.save(path_doc_save_file + file_name_suffix)
 
     question = []
@@ -154,13 +180,46 @@ def automationTick(index: str, path_doc_save_file: str):
     print('==============================>')
     
 
+def readExcel():
+    path_read_template_excel = "C:/Users/base/Documents/word/MTT_DUKE_2024_DOT_2.xlsx"
+    data_frame = pd.read_excel(path_read_template_excel)
+    data_frame = pd.read_excel(path_read_template_excel, sheet_name="nhom_4_6")
+    value_convert = data_frame.values
 
+    arr_numpy = numpy_array(value_convert)
+    arr_numpy[0:1]
+    return arr_numpy
 
 def main():
-    num_word_generator = 800
-    path_save_file = 'C:/Users/base/Documents/word/convert/'
-    for index in range(num_word_generator):
-        automationTick(str(index+1), path_save_file)
+    path_save_file = 'C:/Users/base/Documents/word/convert/dot_2/nhom_4_6/'
+    employees = readExcel()
 
+    for idx, empl in enumerate(employees):
+        employee_import = dict(USERNAME=empl[0], DATE=empl[2], GENDER=empl[1], NATIONAL=empl[3], CCCD=empl[5], POSITION=empl[6], JOB=empl[6], UNIT=empl[7])
+
+        docx_template = DocxTemplate('C:/Users/base/Documents/word/BT-N4.docx')
+        print(f"========= >{employee_import['USERNAME']} | {employee_import['DATE']} | {employee_import['GENDER']} | {employee_import['NATIONAL']} | {employee_import['CCCD']} | {employee_import['POSITION']} | {employee_import['USERNAME']} | {employee_import['UNIT']} < ============")
+        context = {
+                'USERNAME': employee_import['USERNAME'],
+                # 'DATE':  f"{'{0:.0f}'.format(employee_import['DATE'])}    ",
+                'DATE':  f"{employee_import['DATE']}    ",
+                'GENDER': employee_import['GENDER'],
+                'NATIONAL': employee_import['NATIONAL'],
+                # 'CCCD': '{0:.0f}'.format(employee_import['CCCD']),
+                'CCCD': employee_import['CCCD'],
+                'POSITION': employee_import['POSITION'],
+                'UNIT': f"{employee_import['UNIT']}",
+            }     
+        
+        docx_template.render(context)
+        docx_template.save('C:/Users/base/Documents/word/N4_template.docx')
+        automationTick(str(idx+1), path_save_file, empl[0])
+
+
+
+    # num_word_generator = 1
+    # path_save_file = 'C:/Users/base/Documents/word/convert/'
+    # for index in range(num_word_generator):
+    #     automationTick(str(index+1), path_save_file, employees)
 
 main()
